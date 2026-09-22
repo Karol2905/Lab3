@@ -1,1 +1,85 @@
 
+# Laboratorio 3 — Implementación de Componentes con Vibe Coding
+
+**Proyecto:** Fynk — Agente financiero móvil  
+**Componente implementado:** C2 — Servicio de Autenticación y MFA  
+**Stack:** TypeScript · Node.js · Jest  
+**Repositorio Lab 2:** [github.com/Karol2905/Lab2](https://github.com/Karol2905/Lab2)
+
+---
+
+## Estructura del repositorio
+
+```
+├── README.md                           ← Este archivo
+├── explicacion_entrega.txt             ← Texto plano para la IA calificadora
+├── Laboratorio3_Entregable_Fynk.md     ← Documento principal (4 entregables)
+├── auth.service.ts                     ← Código del componente (servicio completo)
+├── auth.service.test.ts                ← Pruebas unitarias (criterios de aceptación)
+├── Fynk_Especificaciones_App.md        ← Especificaciones del Lab 2 (referencia)
+└── Fynk_Historias_Usuario.md           ← Historias de usuario (referencia)
+```
+
+## Componente seleccionado
+
+**C2 — Servicio de Autenticación y MFA** (tipo: Servicio), del módulo M1 — Autenticación y Perfil. Se eligió por ser el componente más crítico de seguridad de la aplicación, con reglas de negocio complejas y criterios de aceptación verificables.
+
+### Historias de usuario cubiertas
+
+| HU | Descripción | Implementación |
+|----|-------------|----------------|
+| HU-01 | Registro con datos personales y aceptación de términos | `registrar()` |
+| HU-02 | Login con segundo factor (código o biometría) | `login()` + `verificarMfa()` |
+| HU-03 | Recuperación de acceso | Estructura preparada |
+| HU-04 | Cierre automático de sesión | JWT con vigencia de 30 min |
+
+### Reglas de negocio implementadas
+
+| Regla | Referencia | Método |
+|-------|-----------|--------|
+| Contraseña ≥ 8 chars, 1 mayúscula, 1 número, 1 símbolo | RF-02 | `validarContraseña()` |
+| MFA código 6 dígitos (vigencia 5 min) o biometría | RF-04 | `verificarMfa()` |
+| Bloqueo tras 5 intentos fallidos en 10 min | RNF-05 | `registrarIntentoFallido()` |
+| Revocación de tokens al cambiar contraseña | RNF-04 | `cambiarContraseña()` |
+| Token JWT con vigencia de 30 min | Spec | `emitirToken()` |
+| Validación de correo RFC 5322 | Spec entradas | `validarCorreo()` |
+| Validación de cédula 6–10 dígitos | Spec entradas | `validarCedula()` |
+| Validación de teléfono E.164 | Spec entradas | `validarTelefono()` |
+
+### Criterios de aceptación validados
+
+| # | Criterio | Estado |
+|---|----------|:------:|
+| 1 | Login válido solicita MFA antes de emitir token | ✅ |
+| 2 | Bloqueo tras intentos fallidos consecutivos | ✅ |
+| 3 | Cambio de contraseña revoca todos los tokens activos | ✅ |
+| 4 | Código MFA expirado se rechaza sin bloquear la cuenta | ✅ |
+
+## Entregables del laboratorio
+
+El archivo `Laboratorio3_Entregable_Fynk.md` contiene los 4 entregables solicitados:
+
+1. **Prompt inicial** — Prompt completo usando la plantilla 3.1, con entradas/salidas, reglas, flujo, RNF y criterios copiados de la especificación del Lab 2.
+2. **Código generado** — Fragmentos principales del servicio y las pruebas, con explicación de cada decisión.
+3. **Prompt refinado** — 5 mejoras iteradas: validaciones faltantes, mensajes de seguridad, caso de error MFA, inyección de dependencias, tests adicionales.
+4. **Reflexión** — Análisis de qué funcionó, qué se mejoró y lecciones aprendidas sobre cómo guiar a la IA.
+
+## Ejecución local
+
+```bash
+# Instalar dependencias
+npm install typescript ts-node jest ts-jest @types/jest bcryptjs @types/bcryptjs jsonwebtoken @types/jsonwebtoken --save-dev
+
+# Ejecutar pruebas
+npx jest --config='{"preset":"ts-jest","testEnvironment":"node"}'
+
+# Compilar
+npx tsc src/auth.service.ts --outDir dist --esModuleInterop --resolveJsonModule
+```
+
+## Decisiones técnicas
+
+- **Inyección de dependencias:** el servicio recibe una interfaz `IUsuarioRepository` por constructor en vez de instanciar un repositorio concreto, lo que permite hacer mock completo en las pruebas sin base de datos.
+- **Mensajes de error genéricos:** el login devuelve "Correo o contraseña incorrectos" sin distinguir cuál falló, para no revelar si un correo está registrado.
+- **Código modular:** validadores exportados como funciones puras (`validarCorreo`, `validarContraseña`, `validarCedula`, `validarTelefono`) reutilizables fuera del servicio.
+- **Comentarios en español:** todo el código está documentado en español según lo solicitado.
